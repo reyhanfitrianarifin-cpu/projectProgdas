@@ -1,0 +1,816 @@
+# Sistem Aplikasi Les UTBK
+
+## controller.h
+```cpp
+#include <iostream>
+
+struct LoginInfo
+{
+    std::string username;
+    std::string password;
+};
+
+struct Tutor{
+    std::string name;
+    std::string subject;
+    std::string schedule;
+};
+
+Tutor tutorList[4] = {
+    {"Dr. Budi Santoso", "Matematika", "Senin & Kamis, 16.00-18.00"},
+    {"Dra. Siti Nurhaliza", "Literasi Bahasa Indonesia", "Selasa & Jumat, 16.00-18.00"},
+    {"Mr. John Anderson", "Literasi Bahasa Inggris", "Rabu & Sabtu, 16.00-18.00"},
+    {"Prof. Ahmad Dahlan", "Penalaran Umum", "Kamis & Minggu, 14.00-16.00"}
+};
+
+class UIController
+{
+public:
+    void lesSchedule()
+    {
+        std::cout << "Jadwal Operasional Les" << std::endl;
+        std::cout << "----------------------" << std::endl;
+        std::cout << "Senin    | 14.00 - 20.00" << std::endl;
+        std::cout << "Selasa   | 14.00 - 20.00" << std::endl;
+        std::cout << "Rabu     | 14.00 - 20.00" << std::endl;
+        std::cout << "Kamis    | 14.00 - 20.00" << std::endl;
+        std::cout << "Jumat    | 14.00 - 20.00" << std::endl;
+        std::cout << "Sabtu    | 09.00 - 17.00" << std::endl;
+        std::cout << "Minggu   | 09.00 - 17.00" << std::endl;
+    }
+
+    void tutorSchedule()
+    {
+        std::cout << "Jadwal Tutor & Mata Pelajaran" << std::endl;
+        std::cout << "========================================" << std::endl;
+        for (int i = 0; i < 4; i++) {
+            std::cout << (i+1) << ". " << tutorList[i].subject << std::endl;
+            std::cout << "   Tutor: " << tutorList[i].name << std::endl;
+            std::cout << "   Jadwal: " << tutorList[i].schedule << std::endl;
+            std::cout << "----------------------------------------" << std::endl;
+        }
+    }
+
+    int getUserInput()
+    {
+        int choice;
+        system("cls");
+        std::cout << "=== SISTEM LES UTBK ===" << std::endl;
+        std::cout << "Pilih menu:" << std::endl;
+        std::cout << "1. Lihat jadwal operasional" << std::endl;
+        std::cout << "2. Lihat jadwal tutor" << std::endl;
+        std::cout << "3. Daftar kelas" << std::endl;
+        std::cout << "4. Login admin" << std::endl;
+        std::cout << "99. Keluar" << std::endl;
+        std::cout << "-----------------------" << std::endl;
+        std::cout << "Masukkan pilihan: ";
+        std::cin >> choice;
+        return choice;
+    }
+
+    LoginInfo getLoginInput()
+    {
+        system("cls");
+        std::string name, password;
+        std::cout << "=== LOGIN ADMIN ===" << std::endl;
+        std::cout << "-------------------" << std::endl;
+        std::cout << "Username: ";
+        std::cin >> name;
+        std::cout << "Password: ";
+        std::cin >> password;
+        return LoginInfo{name, password};
+    }
+
+    int getAdminInput()
+    {
+        int choice;
+        system("cls");
+        std::cout << "=== MENU ADMIN ===" << std::endl;
+        std::cout << "1. View Students" << std::endl;
+        std::cout << "2. View Class Registrations" << std::endl;
+        std::cout << "3. Register New Student" << std::endl;
+        std::cout << "4. Extend Student Registration" << std::endl;
+        std::cout << "5. Remove Student" << std::endl;
+        std::cout << "6. Logout" << std::endl;
+        std::cout << "--------------------" << std::endl;
+        std::cout << "Masukkan Pilihan: ";
+        std::cin >> choice;
+        return choice;
+    }
+};
+```
+
+## user.h
+```cpp
+#include <string>
+#include "controller.h"
+
+class User
+{
+public:
+    void ViewJadwal()
+    {
+        UIController c;
+        system("cls");
+        c.lesSchedule();
+        std::cout << "\n----------------------" << std::endl;
+        std::cout << "Tekan tombol Enter untuk kembali...";
+        std::cin.ignore();
+        std::cin.get();
+    }
+
+    void ViewTutor()
+    {
+        UIController c;
+        system("cls");
+        c.tutorSchedule();
+        std::cout << "\n========================================" << std::endl;
+        std::cout << "Tekan tombol Enter untuk kembali...";
+        std::cin.ignore();
+        std::cin.get();
+    }
+};
+```
+
+## student.h
+```cpp
+#include <fstream>
+#include "user.h"
+
+class Student : public User {
+private:
+    std::string nisn;
+    std::string name;
+    std::string registrationDate;
+    std::string expiryDate;
+
+public:
+    Student (std::string _nisn, std::string _name, std::string _registrationDate, std::string _expiryDate){
+        Student::nisn = _nisn;
+        Student::name = _name;
+        Student::registrationDate = _registrationDate;
+        Student::expiryDate = _expiryDate;
+    }
+
+    std::string getNISN(){
+        return Student::nisn;
+    }
+
+    std::string getName(){
+        return Student::name;
+    }
+
+    std::string getRegistrationDate(){
+        return Student::registrationDate;
+    }
+
+    std::string getExpiryDate(){
+        return Student::expiryDate;
+    }
+
+    void registerClass(int subjectID){
+        std::ofstream ofs;
+        ofs.open("registrations.csv", std::ios::app);
+        ofs << Student::nisn << ",";
+        ofs << Student::name << ",";
+        ofs << tutorList[subjectID-1].subject << ",";
+        ofs << tutorList[subjectID-1].name << ",";
+        ofs << std::endl;
+        ofs.close();
+    }
+};
+
+struct StudentValidationResult
+{
+    bool isValid;
+    Student student;
+};
+
+StudentValidationResult validateNISN(std::string _NISN)
+{
+    std::ifstream studentFile;
+    studentFile.open("students.csv");
+    std::string line;
+    bool isNISNFound = false;
+    Student s = Student("", "", "", "");
+
+    while (!studentFile.eof())
+    {
+        getline(studentFile, line);
+        std::string data[4];
+        std::string buff;
+        int dataPos = 0;
+        
+        for (int i = 0; i < line.length(); i++)
+        {
+            if (line[i] == ',')
+            {
+                data[dataPos] = buff;
+                dataPos++;
+                buff = "";
+                continue;
+            }
+            buff += line[i];
+        }
+        
+        s = Student(data[0], data[1], data[2], data[3]);
+        
+        if (data[0] == _NISN)
+        {
+            isNISNFound = true;
+            break;
+        }
+    }
+    
+    studentFile.close();
+    return StudentValidationResult{isNISNFound, s};
+}
+```
+
+## admin.h
+```cpp
+#include <fstream>
+#include <string>
+#include "student.h"
+
+class Admin : public User
+{
+private:
+    std::string name;
+    std::string password;
+
+public:
+    Admin() {}
+    Admin(std::string _name, std::string _password)
+    {
+        Admin::name = _name;
+        Admin::password = _password;
+    }
+
+    std::string getName() { return Admin::name; }
+    std::string getPassword() { return Admin::password; }
+
+    void RegisterStudent(Student *student)
+    {
+        system("cls");
+        std::ofstream studentOut;
+        studentOut.open("students.csv", std::ios::app);
+        studentOut << student->getNISN() << ",";
+        studentOut << student->getName() << ",";
+        studentOut << student->getRegistrationDate() << ",";
+        studentOut << student->getExpiryDate() << ",";
+        studentOut << std::endl;
+        studentOut.close();
+    }
+
+    void ExtendRegistration()
+    {
+        system("cls");
+        std::ofstream tempOut;
+        std::fstream file("students.csv");
+        
+        if (!file.is_open())
+        {
+            std::cerr << "Error membuka file" << std::endl;
+            return;
+        }
+
+        int selectedIndex;
+        std::string line;
+        int studentIndex = 1;
+        
+        std::cout << "INDEX | NAMA SISWA | TANGGAL EXPIRED" << std::endl;
+        std::cout << "------|------------|------------------" << std::endl;
+        
+        while (getline(file, line))
+        {
+            std::string data[4];
+            std::string buff;
+            int dataPos = 0;
+            
+            for (int i = 0; i < line.length(); i++)
+            {
+                if (line[i] == ',')
+                {
+                    data[dataPos] = buff;
+                    dataPos++;
+                    buff = "";
+                    continue;
+                }
+                buff += line[i];
+            }
+            
+            std::cout << "[" << studentIndex << "] ";
+            std::cout << data[1] << " | ";
+            std::cout << data[3];
+            std::cout << "\n======\n";
+            studentIndex++;
+        }
+        
+        std::string updatedExpiryDate;
+        std::cout << "Masukkan index siswa: ";
+        std::cin >> selectedIndex;
+        std::cout << "Tanggal expired baru [YYYY/MM/DD]: ";
+        std::cin >> updatedExpiryDate;
+
+        tempOut.open("temp.csv", std::ios::app);
+        studentIndex = 1;
+        std::ifstream file2temp("students.csv");
+        
+        if (!file2temp.is_open())
+        {
+            std::cerr << "Error membuka file" << std::endl;
+            return;
+        }
+        
+        while (getline(file2temp, line))
+        {
+            std::string data[4];
+            std::string buff;
+            int dataPos = 0;
+            
+            for (int i = 0; i < line.length(); i++)
+            {
+                if (line[i] == ',')
+                {
+                    data[dataPos] = buff;
+                    dataPos++;
+                    buff = "";
+                    continue;
+                }
+                buff += line[i];
+            }
+            
+            tempOut << data[0] << ",";
+            tempOut << data[1] << ",";
+            tempOut << data[2] << ",";
+            
+            if(studentIndex == selectedIndex){
+                tempOut << updatedExpiryDate << ",";
+            }
+            else {
+                tempOut << data[3] << ",";
+            }
+            
+            tempOut << std::endl;
+            studentIndex++;
+        }
+        
+        tempOut.close();
+        file.close();
+        file2temp.close();
+        remove("students.csv");
+        rename("temp.csv", "students.csv");
+    }
+
+    void RemoveStudent()
+    {
+        system("cls");
+        std::ofstream tempOut;
+        std::fstream file("students.csv");
+        
+        if (!file.is_open())
+        {
+            std::cerr << "Error membuka file" << std::endl;
+            return;
+        }
+
+        int selectedIndex;
+        std::string line;
+        int studentIndex = 1;
+        
+        std::cout << "INDEX | NAMA SISWA | NISN" << std::endl;
+        std::cout << "------|------------|-------------" << std::endl;
+        
+        while (getline(file, line))
+        {
+            std::string data[4];
+            std::string buff;
+            int dataPos = 0;
+            
+            for (int i = 0; i < line.length(); i++)
+            {
+                if (line[i] == ',')
+                {
+                    data[dataPos] = buff;
+                    dataPos++;
+                    buff = "";
+                    continue;
+                }
+                buff += line[i];
+            }
+            
+            std::cout << "[" << studentIndex << "] ";
+            std::cout << data[1] << " | ";
+            std::cout << data[0];
+            std::cout << "\n======\n";
+            studentIndex++;
+        }
+        
+        std::cout << "Masukkan index siswa yang akan dihapus: ";
+        std::cin >> selectedIndex;
+
+        tempOut.open("temp.csv", std::ios::app);
+        studentIndex = 1;
+        std::ifstream file2temp("students.csv");
+        
+        if (!file2temp.is_open())
+        {
+            std::cerr << "Error membuka file" << std::endl;
+            return;
+        }
+        
+        while (getline(file2temp, line))
+        {
+            if (studentIndex == selectedIndex)
+            {
+                studentIndex++;
+                continue;
+            }
+            
+            std::string data[4];
+            std::string buff;
+            int dataPos = 0;
+            
+            for (int i = 0; i < line.length(); i++)
+            {
+                if (line[i] == ',')
+                {
+                    data[dataPos] = buff;
+                    dataPos++;
+                    buff = "";
+                    continue;
+                }
+                buff += line[i];
+            }
+            
+            tempOut << data[0] << ",";
+            tempOut << data[1] << ",";
+            tempOut << data[2] << ",";
+            tempOut << data[3] << ",";
+            tempOut << std::endl;
+            studentIndex++;
+        }
+        
+        tempOut.close();
+        file.close();
+        file2temp.close();
+        remove("students.csv");
+        rename("temp.csv", "students.csv");
+    }
+
+    void ViewStudents()
+    {
+        system("cls");
+        std::fstream file("students.csv");
+        
+        if (!file.is_open())
+        {
+            std::cerr << "Error membuka file" << std::endl;
+            return;
+        }
+
+        std::string line;
+        int studentIndex = 1;
+        
+        std::cout << "=== DAFTAR SISWA ===" << std::endl;
+        
+        while (getline(file, line))
+        {
+            std::string data[4];
+            std::string buff;
+            int dataPos = 0;
+            
+            for (int i = 0; i < line.length(); i++)
+            {
+                if (line[i] == ',')
+                {
+                    data[dataPos] = buff;
+                    dataPos++;
+                    buff = "";
+                    continue;
+                }
+                buff += line[i];
+            }
+            
+            std::cout << "[" << studentIndex << "]" << std::endl;
+            std::cout << "Nama: " << data[1] << std::endl;
+            std::cout << "NISN: " << data[0] << std::endl;
+            std::cout << "Terdaftar sejak: " << data[2] << std::endl;
+            std::cout << "Berakhir pada: " << data[3] << std::endl;
+            std::cout << "\n======\n\n";
+            studentIndex++;
+        }
+    }
+
+    void ViewRegistrations(){
+        system("cls");
+        std::fstream file("registrations.csv");
+        
+        if (!file.is_open())
+        {
+            std::cerr << "Error membuka file" << std::endl;
+            return;
+        }
+
+        std::string line;
+        int regIndex = 1;
+        
+        std::cout << "=== DAFTAR PENDAFTARAN KELAS ===" << std::endl;
+        
+        while (getline(file, line))
+        {
+            std::string data[4];
+            std::string buff;
+            int dataPos = 0;
+            
+            for (int i = 0; i < line.length(); i++)
+            {
+                if (line[i] == ',')
+                {
+                    data[dataPos] = buff;
+                    dataPos++;
+                    buff = "";
+                    continue;
+                }
+                buff += line[i];
+            }
+            
+            std::cout << "[" << regIndex << "]" << std::endl;
+            std::cout << "Nama Siswa: " << data[1] << std::endl;
+            std::cout << "Mata Pelajaran: " << data[2] << std::endl;
+            std::cout << "Tutor: " << data[3] << std::endl;
+            std::cout << "\n======\n\n";
+            regIndex++;
+        }
+    }
+};
+
+struct ValidationResult
+{
+    bool isSuccess;
+    Admin admin;
+};
+
+ValidationResult validateLogin(LoginInfo &loginInfo)
+{
+    Admin arrAdmin[5] = {
+        Admin("admin1", "pass123"),
+        Admin("admin2", "pass456"),
+        Admin("admin", "admin"),
+    };
+
+    int indexFlag = -1;
+    for (int i = 0; i < 5; i++)
+    {
+        if (loginInfo.username == arrAdmin[i].getName() && 
+            loginInfo.password == arrAdmin[i].getPassword())
+        {
+            indexFlag = i;
+            break;
+        }
+    }
+
+    if (indexFlag >= 0)
+    {
+        std::cout << "Login berhasil!" << std::endl;
+        return ValidationResult{true, arrAdmin[indexFlag]};
+    }
+    
+    std::cout << "Username atau password salah. Silakan coba lagi." << std::endl;
+    return ValidationResult{false, Admin("", "")};
+}
+
+void UIAdmin(Admin *admin)
+{
+    const int VIEW_STUDENTS = 1;
+    const int VIEW_REGISTRATIONS = 2;
+    const int ADD_STUDENT = 3;
+    const int EXTEND_REGISTRATION = 4;
+    const int REMOVE_STUDENT = 5;
+    const int LOGOUT = 6;
+
+    UIController c;
+    bool shouldExit = false;
+    std::string nisn, name, registrationDate, expiryDate;
+    Student student = Student("", "", "", "");
+
+    while (true)
+    {
+        if (shouldExit)
+        {
+            break;
+        }
+
+        int choice = c.getAdminInput();
+        
+        switch (choice)
+        {
+        case LOGOUT:
+            shouldExit = true;
+            break;
+            
+        case VIEW_STUDENTS:
+            admin->ViewStudents();
+            std::cout << "\n----------------------" << std::endl;
+            std::cout << "Tekan tombol Enter untuk kembali...";
+            std::cin.ignore();
+            std::cin.get();
+            break;
+            
+        case VIEW_REGISTRATIONS:
+            admin->ViewRegistrations();
+            std::cout << "\n----------------------" << std::endl;
+            std::cout << "Tekan tombol Enter untuk kembali...";
+            std::cin.ignore();
+            std::cin.get();
+            break;
+            
+        case ADD_STUDENT:
+            system("cls");
+            std::cout << "=== DAFTARKAN SISWA BARU ===" << std::endl;
+            std::cout << "============================" << std::endl;
+            std::cin.ignore(1, '\n');
+            std::cout << "NISN: ";
+            getline(std::cin, nisn);
+            std::cout << "Nama: ";
+            getline(std::cin, name);
+            std::cout << "Tanggal Pendaftaran [YYYY/MM/DD]: ";
+            getline(std::cin, registrationDate);
+            std::cout << "Tanggal Berakhir [YYYY/MM/DD]: ";
+            getline(std::cin, expiryDate);
+            
+            student = Student(nisn, name, registrationDate, expiryDate);
+            admin->RegisterStudent(&student);
+            
+            std::cout << "\nData siswa berhasil ditambahkan!" << std::endl;
+            std::cout << "\n----------------------" << std::endl;
+            std::cout << "Tekan tombol Enter untuk kembali...";
+            std::cin.get();
+            break;
+            
+        case EXTEND_REGISTRATION:
+            admin->ExtendRegistration();
+            std::cout << "\n----------------------" << std::endl;
+            std::cout << "Tekan tombol Enter untuk kembali...";
+            std::cin.ignore();
+            std::cin.get();
+            break;
+            
+        case REMOVE_STUDENT:
+            admin->RemoveStudent();
+            std::cout << "\n----------------------" << std::endl;
+            std::cout << "Tekan tombol Enter untuk kembali...";
+            std::cin.ignore();
+            std::cin.get();
+            break;
+            
+        default:
+            std::cout << "Pilihan tidak valid!" << std::endl;
+            break;
+        }
+    }
+}
+```
+
+## main.cpp
+```cpp
+#include <iostream>
+#include "admin.h"
+
+using namespace std;
+
+int main() {
+    const int JADWAL = 1;
+    const int TUTOR = 2;
+    const int DAFTAR_KELAS = 3;
+    const int LOGIN = 4;
+    const int KELUAR = 99;
+
+    UIController c;
+    User user;
+    Admin admin;
+    LoginInfo loginInfo;
+    ValidationResult result;
+    StudentValidationResult svr = StudentValidationResult{false, Student("", "", "", "")};
+    
+    std::string NISN;
+    bool shouldExit = false;
+
+    while (true) {
+        if (shouldExit) {
+            break;
+        }
+
+        int choice = c.getUserInput();
+        
+        switch (choice) {
+        case KELUAR:
+            cout << "\nTerima kasih telah menggunakan Sistem Les UTBK!" << endl;
+            shouldExit = true;
+            break;
+            
+        case JADWAL:
+            user.ViewJadwal();
+            break;
+            
+        case TUTOR:
+            user.ViewTutor();
+            break;
+            
+        case DAFTAR_KELAS:
+            system("cls");
+            c.tutorSchedule();
+            std::cout << "\n========================================" << std::endl;
+            std::cout << "Masukkan NISN Anda: ";
+            std::cin >> NISN;
+            
+            svr = validateNISN(NISN);
+            
+            if(!svr.isValid){
+                std::cout << "\nMaaf, NISN tidak terdaftar dalam sistem." << std::endl;
+                std::cout << "Silakan hubungi admin untuk pendaftaran." << std::endl;
+                cout << "\n========================================" << endl;
+                cout << "Tekan tombol Enter untuk kembali...";
+                std::cin.ignore();
+                std::cin.get();
+                break;
+            }
+            
+            int subjectId;
+            std::cout << "\n========================================" << std::endl;
+            std::cout << "Halo, " << svr.student.getName() << "!" << std::endl;
+            std::cout << "Pilih mata pelajaran [1-4]: ";
+            cin >> subjectId;
+            
+            if(subjectId < 1 || subjectId > 4){
+                std::cout << "Pilihan tidak valid!" << std::endl;
+                cout << "\n========================================" << endl;
+                cout << "Tekan tombol Enter untuk kembali...";
+                std::cin.ignore();
+                std::cin.get();
+                break;
+            }
+            
+            svr.student.registerClass(subjectId);
+            cout << "\nPendaftaran kelas berhasil!" << endl;
+            cout << "Mata Pelajaran: " << tutorList[subjectId-1].subject << endl;
+            cout << "Tutor: " << tutorList[subjectId-1].name << endl;
+            cout << "\n========================================" << endl;
+            cout << "Tekan tombol Enter untuk kembali...";
+            std::cin.ignore();
+            std::cin.get();
+            break;
+            
+        case LOGIN:
+            loginInfo = c.getLoginInput();
+            result = validateLogin(loginInfo);
+            
+            if (!result.isSuccess) {
+                cout << "\n========================================" << endl;
+                cout << "Tekan tombol Enter untuk kembali...";
+                cin.ignore();
+                cin.get();
+                break;
+            }
+            
+            UIAdmin(&result.admin);
+            break;
+            
+        default:
+            cout << "Pilihan yang Anda masukkan salah!" << endl;
+            break;
+        }
+    }
+
+    return 0;
+}
+```
+
+## Cara Penggunaan:
+
+1. **Compile semua file** menggunakan C++ compiler (misalnya g++):
+   ```bash
+   g++ main.cpp -o utbk_les
+   ```
+
+2. **Buat file CSV** untuk data awal:
+   - `students.csv` - untuk data siswa yang sudah terdaftar
+   - `registrations.csv` - untuk data pendaftaran kelas (akan dibuat otomatis)
+
+3. **Format students.csv**:
+   ```
+   0012345678,Ahmad Rizki,2024/01/15,2025/01/15,
+   0012345679,Siti Aminah,2024/02/20,2025/02/20,
+   ```
+
+4. **Login Admin Default**:
+   - Username: `admin`
+   - Password: `admin`
+
+5. **Fitur Utama**:
+   - Student dapat melihat jadwal dan mendaftar kelas dengan NISN
+   - Admin dapat mengelola data siswa dan melihat pendaftaran kelas
+   - Sistem menggunakan 4 subtest UTBK dengan masing-masing 1 tutor
+
+Aplikasi ini mengikuti struktur yang sama dengan contoh gym membership, dengan perbedaan utama pada domain aplikasi (les UTBK vs gym) dan siswa yang sudah pre-registered (mirip member di sistem gym).
